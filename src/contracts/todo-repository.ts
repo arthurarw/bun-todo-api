@@ -12,4 +12,5 @@ export interface ITodoRepository {
   findByUserId(userId: string): TodoEntity[];
   updateStatus(id: string, userId: string, status: TodoStatus): TodoEntity | null;
   deleteByIdAndUserId(id: string, userId: string): boolean;
+  findById(id: string, userId: string): TodoEntity | null;
 }

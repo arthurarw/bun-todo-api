@@ -16,7 +16,8 @@ describe("TodoService", () => {
         }) as TodoEntity,
       findByUserId: () => [],
       updateStatus: () => null,
-      deleteByIdAndUserId: () => false
+      deleteByIdAndUserId: () => false,
+      findById: () => null,
     };
 
     const service = new TodoService(repository);
@@ -34,7 +35,8 @@ describe("TodoService", () => {
       },
       findByUserId: () => [],
       updateStatus: () => null,
-      deleteByIdAndUserId: () => false
+      deleteByIdAndUserId: () => false,
+      findById: () => null,
     };
 
     const service = new TodoService(repository);

@@ -1,5 +1,5 @@
 import type { ITodoRepository } from "@/contracts/todo-repository";
-import type { TodoEntity, TodoStatus } from "@/entities/todo-entity";
+import { TodoStatusEnum, type TodoEntity, type TodoStatus } from "@/entities/todo-entity";
 import { AppError } from "@/errors/app-error";
 import { StatusCodes } from "http-status-codes";
 import { v7 as uuidv7 } from "uuid";
@@ -27,7 +27,7 @@ export class TodoService {
   }
 
   updateStatus(id: string, userId: string, status: TodoStatus): TodoEntity {
-    const todo = this.todoRepository.updateStatus(id, userId, status);
+    const todo = this.todoRepository.findById(id, userId);
     if (!todo) {
       throw new AppError({
         statusCode: StatusCodes.NOT_FOUND,
@@ -36,7 +36,25 @@ export class TodoService {
       });
     }
 
-    return todo;
+    if (todo.status === TodoStatusEnum.Completed) {
+      throw new AppError({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: "TODO_COMPLETED",
+        message: "Tarefa já foi concluída."
+      });
+    }
+
+
+    const update = this.todoRepository.updateStatus(id, userId, status);
+    if (!update) {
+      throw new AppError({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: "TODO_NOT_FOUND",
+        message: "Tarefa não encontrada."
+      });
+    }
+
+    return update;
   }
 
   delete(id: string, userId: string): void {

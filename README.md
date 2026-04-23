@@ -269,6 +269,7 @@ Response `201`:
       "title": "Estudar SOLID",
       "description": "Revisar princípios e aplicar no projeto",
       "status": "pending",
+      "completed_at": null,
       "created_at": "2026-01-01T10:10:00.000Z",
       "updated_at": "2026-01-01T10:10:00.000Z"
     }
@@ -313,6 +314,7 @@ Response `200`:
       "title": "Estudar SOLID",
       "description": "Revisar princípios e aplicar no projeto",
       "status": "completed",
+      "completed_at": "2026-01-01T10:20:00.000Z",
       "created_at": "2026-01-01T10:10:00.000Z",
       "updated_at": "2026-01-01T10:20:00.000Z"
     }

@@ -33,13 +33,26 @@ export class SqliteTodoRepository implements ITodoRepository {
     return this.database
       .query(
         `
-        SELECT id, user_id, title, description, status, created_at, updated_at
+        SELECT id, user_id, title, description, status, created_at, updated_at, completed_at
         FROM todos
         WHERE user_id = ?
         ORDER BY created_at DESC
       `
       )
       .all(userId) as TodoEntity[];
+  }
+
+
+  findById(id: string, userId: string): TodoEntity | null {
+    return this.database
+      .query(
+        `
+        SELECT id, user_id, title, description, status, created_at, updated_at, completed_at
+        FROM todos
+        WHERE id = ? AND user_id = ?
+      `
+      )
+      .get(id, userId) as TodoEntity | null;
   }
 
   updateStatus(id: string, userId: string, status: TodoStatus): TodoEntity | null {

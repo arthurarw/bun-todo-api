@@ -3,6 +3,7 @@ import type { ISessionRepository } from "@/contracts/session-repository";
 import type { IUserRepository } from "@/contracts/user-repository";
 import type { UserEntity } from "@/entities/user-entity";
 import { AppError } from "@/errors/app-error";
+import { createId } from "@paralleldrive/cuid2";
 import { StatusCodes } from "http-status-codes";
 import { v7 as uuidv7 } from "uuid";
 
@@ -105,7 +106,7 @@ export class AuthService {
   }
 
   private createSessionForUser(user: UserEntity): AuthSessionOutput {
-    const token = uuidv7();
+    const token = createId();
     const expiresAt = new Date(Date.now() + env.SESSION_TTL_HOURS * 60 * 60 * 1000).toISOString();
 
     this.sessionRepository.create({
