@@ -4,6 +4,7 @@ import { createAuthRoutes } from "@/routes/auth-routes";
 import { createTodoRoutes } from "@/routes/todo-routes";
 import type { AuthService } from "@/services/auth-service";
 import { Router } from "express";
+import { StatusCodes } from "http-status-codes";
 
 export function createIndexRoutes(
   authController: AuthController,
@@ -13,9 +14,7 @@ export function createIndexRoutes(
   const router = Router();
 
   router.get("/health", (_request, response) => {
-    response.status(200).json({
-      success: true,
-      message: "API online.",
+    response.status(StatusCodes.OK).json({
       data: {
         status: "ok"
       }
