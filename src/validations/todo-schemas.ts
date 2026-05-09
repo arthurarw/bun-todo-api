@@ -12,3 +12,7 @@ export const createTodoSchema = z.object({
 export const updateTodoStatusSchema = z.object({
   status: z.enum(["pending", "completed"])
 });
+
+export const findByIdSchema = z.object({
+  id: z.uuid()
+});

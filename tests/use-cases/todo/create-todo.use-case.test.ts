@@ -1,9 +1,10 @@
 import type { ITodoRepository } from "@/contracts/todo-repository";
 import type { TodoEntity } from "@/entities/todo-entity";
-import { TodoService } from "@/services/todo-service";
+import { CreateTodoUseCase } from "@/use-cases/todo/create-todo.use-case";
+import { UpdateTodoStatusUseCase } from "@/use-cases/todo/update-todo-status.use-case";
 import { describe, expect, it } from "bun:test";
 
-describe("TodoService", () => {
+describe("CreateTodoUseCase", () => {
   it("deve criar tarefa com status pending por padrão", () => {
     const repository: ITodoRepository = {
       create: (input) =>
@@ -11,23 +12,26 @@ describe("TodoService", () => {
           ...input,
           description: input.description ?? null,
           status: "pending",
+          completed_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }) as TodoEntity,
       findByUserId: () => [],
       updateStatus: () => null,
       deleteByIdAndUserId: () => false,
-      findById: () => null,
+      findById: () => null
     };
 
-    const service = new TodoService(repository);
-    const todo = service.create({ userId: "user-1", title: "Estudar Bun" });
+    const useCase = new CreateTodoUseCase(repository);
+    const todo = useCase.execute({ userId: "user-1", title: "Estudar Bun" });
 
     expect(todo.user_id).toBe("user-1");
     expect(todo.title).toBe("Estudar Bun");
     expect(todo.status).toBe("pending");
   });
+});
 
+describe("UpdateTodoStatusUseCase", () => {
   it("deve lançar erro quando tarefa não existir ao atualizar status", () => {
     const repository: ITodoRepository = {
       create: () => {
@@ -36,11 +40,11 @@ describe("TodoService", () => {
       findByUserId: () => [],
       updateStatus: () => null,
       deleteByIdAndUserId: () => false,
-      findById: () => null,
+      findById: () => null
     };
 
-    const service = new TodoService(repository);
+    const useCase = new UpdateTodoStatusUseCase(repository);
 
-    expect(() => service.updateStatus("todo-1", "user-1", "completed")).toThrow("Tarefa não encontrada.");
+    expect(() => useCase.execute("todo-1", "user-1", "completed")).toThrow("Tarefa não encontrada.");
   });
 });

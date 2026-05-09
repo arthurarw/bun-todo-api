@@ -1,25 +1,24 @@
 import { AppError } from "@/errors/app-error";
-import type { TodoService } from "@/services/todo-service";
+import { makeCreateTodoUseCase, makeDeleteTodoUseCase, makeListTodosUseCase, makeUpdateTodoStatusUseCase } from "@/factories/todo.factory";
 import { successResponse } from "@/utils/http-response";
-import { createTodoSchema, updateTodoStatusSchema } from "@/validations/todo-schemas";
+import { createTodoSchema, findByIdSchema, updateTodoStatusSchema } from "@/validations/todo-schemas";
 import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
 export class TodoController {
-  constructor(private readonly todoService: TodoService) { }
-
   create = (request: Request, response: Response, next: NextFunction): void => {
     try {
       const user = this.requireUser(request);
       const payload = createTodoSchema.parse(request.body);
+      const useCase = makeCreateTodoUseCase();
 
-      const todo = this.todoService.create({
+      const todo = useCase.execute({
         userId: user.id,
         title: payload.title,
         description: payload.description
       });
 
-      response.status(201).json(successResponse("Tarefa criada com sucesso.", { todo }));
+      response.status(StatusCodes.CREATED).json(successResponse(todo));
     } catch (error) {
       next(error);
     }
@@ -28,8 +27,9 @@ export class TodoController {
   list = (request: Request, response: Response, next: NextFunction): void => {
     try {
       const user = this.requireUser(request);
-      const todos = this.todoService.listByUser(user.id);
-      response.status(200).json(successResponse("Tarefas listadas com sucesso.", { todos }));
+      const useCase = makeListTodosUseCase();
+      const todos = useCase.execute(user.id);
+      response.status(StatusCodes.OK).json(successResponse(todos));
     } catch (error) {
       next(error);
     }
@@ -38,18 +38,11 @@ export class TodoController {
   updateStatus = (request: Request, response: Response, next: NextFunction): void => {
     try {
       const user = this.requireUser(request);
-      const params = request.params as { id?: string };
-      if (!params.id) {
-        throw new AppError({
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: "TODO_ID_REQUIRED",
-          message: "ID da tarefa é obrigatório."
-        });
-      }
-
+      const { id } = findByIdSchema.parse(request.params);
       const payload = updateTodoStatusSchema.parse(request.body);
-      const todo = this.todoService.updateStatus(params.id, user.id, payload.status);
-      response.status(200).json(successResponse("Status da tarefa atualizado com sucesso.", { todo }));
+      const useCase = makeUpdateTodoStatusUseCase();
+      const todo = useCase.execute(id, user.id, payload.status);
+      response.status(StatusCodes.OK).json(successResponse(todo));
     } catch (error) {
       next(error);
     }
@@ -58,17 +51,11 @@ export class TodoController {
   delete = (request: Request, response: Response, next: NextFunction): void => {
     try {
       const user = this.requireUser(request);
-      const params = request.params as { id?: string };
-      if (!params.id) {
-        throw new AppError({
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: "TODO_ID_REQUIRED",
-          message: "ID da tarefa é obrigatório."
-        });
-      }
+      const { id } = findByIdSchema.parse(request.params);
 
-      this.todoService.delete(params.id, user.id);
-      response.status(200).json(successResponse("Tarefa removida com sucesso.", null));
+      const useCase = makeDeleteTodoUseCase();
+      useCase.execute(id, user.id);
+      response.status(StatusCodes.OK).json(successResponse(null));
     } catch (error) {
       next(error);
     }

@@ -1,11 +1,10 @@
-import type { TodoController } from "@/controllers/todo-controller";
-import { createAuthMiddleware } from "@/middlewares/auth-middleware";
-import type { AuthService } from "@/services/auth-service";
+import { TodoController } from "@/controllers/todo-controller";
+import { authMiddleware } from "@/middlewares/auth-middleware";
 import { Router } from "express";
 
-export function createTodoRoutes(todoController: TodoController, authService: AuthService): Router {
+export function createTodoRoutes(): Router {
   const router = Router();
-  const authMiddleware = createAuthMiddleware(authService);
+  const todoController = new TodoController();
 
   router.use(authMiddleware);
   router.post("/", todoController.create);

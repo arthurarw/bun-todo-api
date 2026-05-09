@@ -1,11 +1,10 @@
-import type { AuthController } from "@/controllers/auth-controller";
-import { createAuthMiddleware } from "@/middlewares/auth-middleware";
-import type { AuthService } from "@/services/auth-service";
+import { AuthController } from "@/controllers/auth-controller";
+import { authMiddleware } from "@/middlewares/auth-middleware";
 import { Router } from "express";
 
-export function createAuthRoutes(authController: AuthController, authService: AuthService): Router {
+export function createAuthRoutes(): Router {
   const router = Router();
-  const authMiddleware = createAuthMiddleware(authService);
+  const authController = new AuthController();
 
   router.post("/register", authController.register);
   router.post("/login", authController.login);
