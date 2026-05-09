@@ -6,7 +6,7 @@ API RESTful de Todo List construída com **Bun runtime**, **Express.js**, **SQLi
 
 ### Principais características
 
-- Arquitetura em camadas: `controllers`, `services`, `repositories`, `entities`, `routes`.
+- Arquitetura em camadas: `controllers`, `use-cases`, `repositories`, `entities`, `routes`, `factories`.
 - SQL nativo via `bun:sqlite`.
 - Autenticação baseada em cookie HTTP-only com controle de sessão.
 - CRUD completo de tarefas por usuário autenticado.
@@ -15,7 +15,7 @@ API RESTful de Todo List construída com **Bun runtime**, **Express.js**, **SQLi
 - Migrações SQL versionadas para SQLite.
 - IDs em `TEXT` usando padrão UUID v7.
 - Colunas em `snake_case`.
-- Testes unitários de services e controllers com `bun test`.
+- Testes unitários de use-cases e controllers com `bun test`.
 
 ## 2. Stack e Dependências
 
@@ -63,13 +63,25 @@ bun-todo-api/
       sqlite-session-repository.ts
       sqlite-todo-repository.ts
       sqlite-user-repository.ts
+    factories/
+      auth.factory.ts
+      todo.factory.ts
     routes/
       auth-routes.ts
       index-routes.ts
       todo-routes.ts
-    services/
-      auth-service.ts
-      todo-service.ts
+    use-cases/
+      auth/
+        get-session-user.use-case.ts
+        login.use-case.ts
+        logout.use-case.ts
+        register.use-case.ts
+        session.helper.ts
+      todo/
+        create-todo.use-case.ts
+        delete-todo.use-case.ts
+        list-todos.use-case.ts
+        update-todo-status.use-case.ts
     types/
       express/
         index.d.ts
@@ -81,7 +93,9 @@ bun-todo-api/
   tests/
     controllers/
     helpers/
-    services/
+    use-cases/
+      auth/
+      todo/
   .env.example
   package.json
   tsconfig.json
@@ -151,12 +165,10 @@ Base URL: `http://localhost:3000/api/v1`
 
 #### GET `/health`
 
-Resposta:
+Response `200`:
 
 ```json
 {
-  "success": true,
-  "message": "API online.",
   "data": {
     "status": "ok"
   }
@@ -176,19 +188,15 @@ Request:
 }
 ```
 
-Response `201`:
+Response `201` — define cookie HTTP-only de sessão:
 
 ```json
 {
-  "success": true,
-  "message": "Usuário registrado com sucesso.",
   "data": {
-    "user": {
-      "id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
-      "email": "john@doe.com",
-      "created_at": "2026-01-01T10:00:00.000Z",
-      "updated_at": "2026-01-01T10:00:00.000Z"
-    }
+    "id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
+    "email": "john@doe.com",
+    "created_at": "2026-01-01T10:00:00.000Z",
+    "updated_at": "2026-01-01T10:00:00.000Z"
   }
 }
 ```
@@ -204,18 +212,27 @@ Request:
 }
 ```
 
-Response `200`: define cookie HTTP-only de sessão.
+Response `200` — define cookie HTTP-only de sessão:
+
+```json
+{
+  "data": {
+    "id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
+    "email": "john@doe.com",
+    "created_at": "2026-01-01T10:00:00.000Z",
+    "updated_at": "2026-01-01T10:00:00.000Z"
+  }
+}
+```
 
 #### POST `/auth/logout`
 
 Requer autenticação por cookie.
 
-Response `200`:
+Response `204`:
 
 ```json
 {
-  "success": true,
-  "message": "Logout efetuado com sucesso.",
   "data": null
 }
 ```
@@ -228,15 +245,11 @@ Response `200`:
 
 ```json
 {
-  "success": true,
-  "message": "Usuário autenticado.",
   "data": {
-    "user": {
-      "id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
-      "email": "john@doe.com",
-      "created_at": "2026-01-01T10:00:00.000Z",
-      "updated_at": "2026-01-01T10:00:00.000Z"
-    }
+    "id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
+    "email": "john@doe.com",
+    "created_at": "2026-01-01T10:00:00.000Z",
+    "updated_at": "2026-01-01T10:00:00.000Z"
   }
 }
 ```
@@ -260,19 +273,15 @@ Response `201`:
 
 ```json
 {
-  "success": true,
-  "message": "Tarefa criada com sucesso.",
   "data": {
-    "todo": {
-      "id": "0195f9cb-4aa3-7d9f-9239-f7f4d210aaaa",
-      "user_id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
-      "title": "Estudar SOLID",
-      "description": "Revisar princípios e aplicar no projeto",
-      "status": "pending",
-      "completed_at": null,
-      "created_at": "2026-01-01T10:10:00.000Z",
-      "updated_at": "2026-01-01T10:10:00.000Z"
-    }
+    "id": "0195f9cb-4aa3-7d9f-9239-f7f4d210aaaa",
+    "user_id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
+    "title": "Estudar SOLID",
+    "description": "Revisar princípios e aplicar no projeto",
+    "status": "pending",
+    "completed_at": null,
+    "created_at": "2026-01-01T10:10:00.000Z",
+    "updated_at": "2026-01-01T10:10:00.000Z"
   }
 }
 ```
@@ -283,11 +292,7 @@ Response `200`:
 
 ```json
 {
-  "success": true,
-  "message": "Tarefas listadas com sucesso.",
-  "data": {
-    "todos": []
-  }
+  "data": []
 }
 ```
 
@@ -305,19 +310,15 @@ Response `200`:
 
 ```json
 {
-  "success": true,
-  "message": "Status da tarefa atualizado com sucesso.",
   "data": {
-    "todo": {
-      "id": "0195f9cb-4aa3-7d9f-9239-f7f4d210aaaa",
-      "user_id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
-      "title": "Estudar SOLID",
-      "description": "Revisar princípios e aplicar no projeto",
-      "status": "completed",
-      "completed_at": "2026-01-01T10:20:00.000Z",
-      "created_at": "2026-01-01T10:10:00.000Z",
-      "updated_at": "2026-01-01T10:20:00.000Z"
-    }
+    "id": "0195f9cb-4aa3-7d9f-9239-f7f4d210aaaa",
+    "user_id": "0195f9cb-0eb8-7abc-a6a9-0ec0df542111",
+    "title": "Estudar SOLID",
+    "description": "Revisar princípios e aplicar no projeto",
+    "status": "completed",
+    "completed_at": "2026-01-01T10:20:00.000Z",
+    "created_at": "2026-01-01T10:10:00.000Z",
+    "updated_at": "2026-01-01T10:20:00.000Z"
   }
 }
 ```
@@ -328,8 +329,6 @@ Response `200`:
 
 ```json
 {
-  "success": true,
-  "message": "Tarefa removida com sucesso.",
   "data": null
 }
 ```
@@ -338,20 +337,19 @@ Response `200`:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Dados de entrada inválidos.",
-    "details": []
-  }
+  "code": "VALIDATION_ERROR",
+  "message": "Dados de entrada inválidos.",
+  "details": []
 }
 ```
 
 ## 9. Decisões de Arquitetura
 
+- **Use-Case Pattern**: cada operação é uma classe isolada com método `execute()`, facilitando teste e reuso.
+- **Factories**: `src/factories/` compõe use-cases com repositórios concretos; trocar persistência exige alterar apenas a factory.
 - Repositórios isolam acesso ao SQLite via SQL nativo e facilitam troca de persistência.
-- Services concentram regra de negócio e não dependem de Express.
-- Controllers apenas coordenam HTTP, validação e chamadas de service.
+- Use-cases concentram regra de negócio e não dependem de Express.
+- Controllers apenas coordenam HTTP, validação e chamadas de use-case.
 - Middlewares lidam com autenticação e tratamento de erro de forma transversal.
 - Contratos (`contracts`) aplicam inversão de dependência (SOLID - DIP).
 - UUID v7 em IDs melhora ordenação temporal aproximada e garante unicidade distribuída.

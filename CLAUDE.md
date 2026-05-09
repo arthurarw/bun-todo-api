@@ -54,7 +54,7 @@ The API runs on `http://localhost:3000` by default (configurable via `PORT` env 
 ```
 Controllers
   ↓ (coordinate HTTP, validation, delegate to)
-Services
+Use Cases (one class per operation, injected via Factories)
   ↓ (business logic, delegate persistence to)
 Repositories (implement contracts via SQLite)
   ↓
@@ -92,14 +92,7 @@ Database (bun:sqlite)
    - UUIDs v7 for entities (via `uuid` package) → temporal ordering + distributed uniqueness
    - CUID2 for session tokens (via `@paralleldrive/cuid2`) → short, URL-safe tokens
 
-6. **HTTP Response Format**: All responses (success & error) use standardized envelope:
-   ```json
-   {
-     "success": true,
-     "message": "...",
-     "data": { ... }
-   }
-   ```
+6. **HTTP Response Format**: Success responses use `{ "data": <value> }`. Error responses use `{ "code": "...", "message": "...", "details": [...] }`. No `success` field, no wrapper keys.
 
 ---
 
