@@ -4,20 +4,24 @@ import { makeGetSessionUserUseCase } from "@/factories/auth.factory";
 import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-export function authMiddleware(request: Request, _response: Response, next: NextFunction): void {
-  const token = request.cookies[env.COOKIE_NAME] as string | undefined;
-  if (!token) {
-    throw new AppError({
-      statusCode: StatusCodes.UNAUTHORIZED,
-      code: "UNAUTHORIZED",
-      message: "Autenticação necessária."
-    });
+export async function authMiddleware(request: Request, _response: Response, next: NextFunction): Promise<void> {
+  try {
+    const token = request.cookies[env.COOKIE_NAME] as string | undefined;
+    if (!token) {
+      throw new AppError({
+        statusCode: StatusCodes.UNAUTHORIZED,
+        code: "UNAUTHORIZED",
+        message: "Autenticação necessária."
+      });
+    }
+
+    const useCase = makeGetSessionUserUseCase();
+    const user = await useCase.execute(token);
+    request.user = user;
+    request.sessionToken = token;
+
+    next();
+  } catch (error) {
+    next(error);
   }
-
-  const useCase = makeGetSessionUserUseCase();
-  const user = useCase.execute(token);
-  request.user = user;
-  request.sessionToken = token;
-
-  next();
-};
+}

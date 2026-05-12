@@ -1,8 +1,8 @@
 import { env } from "@/config/env";
 import type { ISessionRepository } from "@/contracts/session-repository";
 import type { UserEntity } from "@/entities/user-entity";
-import { createId } from "@paralleldrive/cuid2";
 import { v7 as uuidv7 } from "uuid";
+import { signJwt } from "../../utils/jwt.helper";
 
 export type PublicUser = Pick<UserEntity, "id" | "email" | "created_at" | "updated_at">;
 
@@ -20,11 +20,11 @@ export function toPublicUser(user: UserEntity): PublicUser {
   };
 }
 
-export function createSession(
+export async function createSession(
   sessionRepository: ISessionRepository,
   user: UserEntity
-): AuthSessionOutput {
-  const token = createId();
+): Promise<AuthSessionOutput> {
+  const token = await signJwt({ sub: user.id, email: user.email });
   const expiresAt = new Date(Date.now() + env.SESSION_TTL_HOURS * 60 * 60 * 1000).toISOString();
 
   sessionRepository.create({

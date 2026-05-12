@@ -13,7 +13,7 @@ export class LoginUseCase {
   constructor(
     private readonly userRepository: IUserRepository,
     private readonly sessionRepository: ISessionRepository
-  ) {}
+  ) { }
 
   async execute(input: LoginInput): Promise<AuthSessionOutput> {
     const user = this.userRepository.findByEmail(input.email);
@@ -34,6 +34,6 @@ export class LoginUseCase {
       });
     }
 
-    return createSession(this.sessionRepository, user);
+    return await createSession(this.sessionRepository, user);
   }
 }

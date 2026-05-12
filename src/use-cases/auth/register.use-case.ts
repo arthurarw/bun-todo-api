@@ -33,6 +33,6 @@ export class RegisterUseCase {
       password_hash: passwordHash
     });
 
-    return createSession(this.sessionRepository, user);
+    return await createSession(this.sessionRepository, user);
   }
 }

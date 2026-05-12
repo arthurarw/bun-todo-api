@@ -8,7 +8,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_PATH: z.string().min(1).default("./database.sqlite"),
   COOKIE_NAME: z.string().min(1).default("tk_auth"),
-  SESSION_TTL_HOURS: z.coerce.number().int().positive().default(24)
+  SESSION_TTL_HOURS: z.coerce.number().int().positive().default(24),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters")
 });
 
 export const env = envSchema.parse(process.env);

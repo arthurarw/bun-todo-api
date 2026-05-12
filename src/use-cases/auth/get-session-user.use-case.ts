@@ -2,6 +2,7 @@ import type { ISessionRepository } from "@/contracts/session-repository";
 import type { IUserRepository } from "@/contracts/user-repository";
 import { AppError } from "@/errors/app-error";
 import { StatusCodes } from "http-status-codes";
+import { verifyJwt } from "../../utils/jwt.helper";
 import { type PublicUser, toPublicUser } from "./session.helper";
 
 export class GetSessionUserUseCase {
@@ -10,26 +11,30 @@ export class GetSessionUserUseCase {
     private readonly sessionRepository: ISessionRepository
   ) { }
 
-  execute(sessionToken: string): PublicUser {
+  async execute(sessionToken: string): Promise<PublicUser> {
+    let userId: string;
+
+    try {
+      const payload = await verifyJwt(sessionToken);
+      userId = payload.sub;
+    } catch {
+      throw new AppError({
+        statusCode: StatusCodes.UNAUTHORIZED,
+        code: "UNAUTHORIZED",
+        message: "Token inválido."
+      });
+    }
+
     const session = this.sessionRepository.findByToken(sessionToken);
     if (!session) {
       throw new AppError({
         statusCode: StatusCodes.UNAUTHORIZED,
         code: "UNAUTHORIZED",
-        message: "Sessão inválida."
+        message: "Sessão inválida ou revogada."
       });
     }
 
-    if (new Date(session.expires_at).getTime() <= Date.now()) {
-      this.sessionRepository.deleteByToken(sessionToken);
-      throw new AppError({
-        statusCode: StatusCodes.UNAUTHORIZED,
-        code: "SESSION_EXPIRED",
-        message: "Sessão expirada."
-      });
-    }
-
-    const user = this.userRepository.findById(session.user_id);
+    const user = this.userRepository.findById(userId);
     if (!user) {
       throw new AppError({
         statusCode: StatusCodes.UNAUTHORIZED,

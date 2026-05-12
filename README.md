@@ -8,7 +8,7 @@ API RESTful de Todo List construída com **Bun runtime**, **Express.js**, **SQLi
 
 - Arquitetura em camadas: `controllers`, `use-cases`, `repositories`, `entities`, `routes`, `factories`.
 - SQL nativo via `bun:sqlite`.
-- Autenticação baseada em cookie HTTP-only com controle de sessão.
+- Autenticação baseada em JWT armazenado em cookie HTTP-only com revogação via sessão no banco.
 - CRUD completo de tarefas por usuário autenticado.
 - Validação de entrada com `Zod v4`.
 - Tratamento centralizado de erros com payload padronizado.
@@ -24,84 +24,11 @@ API RESTful de Todo List construída com **Bun runtime**, **Express.js**, **SQLi
 - Banco: SQLite (`bun:sqlite`)
 - Validação: Zod v4
 - UUID: `uuid` (v7)
+- JWT: `jose`
 - Cookies: `cookie-parser`
 - Ambiente: `dotenv`
 
-## 3. Estrutura do Projeto
-
-```text
-bun-todo-api/
-  migrations/
-    001_create_users_table.sql
-    002_create_sessions_table.sql
-    003_create_todos_table.sql
-  scripts/
-    init-db.ts
-    migrate.ts
-  src/
-    config/
-      env.ts
-    controllers/
-      auth-controller.ts
-      todo-controller.ts
-    contracts/
-      session-repository.ts
-      todo-repository.ts
-      user-repository.ts
-    database/
-      sqlite.ts
-    entities/
-      session-entity.ts
-      todo-entity.ts
-      user-entity.ts
-    errors/
-      app-error.ts
-    middlewares/
-      auth-middleware.ts
-      error-middleware.ts
-    repositories/
-      sqlite-session-repository.ts
-      sqlite-todo-repository.ts
-      sqlite-user-repository.ts
-    factories/
-      auth.factory.ts
-      todo.factory.ts
-    routes/
-      auth-routes.ts
-      index-routes.ts
-      todo-routes.ts
-    use-cases/
-      auth/
-        get-session-user.use-case.ts
-        login.use-case.ts
-        logout.use-case.ts
-        register.use-case.ts
-        session.helper.ts
-      todo/
-        create-todo.use-case.ts
-        delete-todo.use-case.ts
-        list-todos.use-case.ts
-        update-todo-status.use-case.ts
-    types/
-      express/
-        index.d.ts
-    validations/
-      auth-schemas.ts
-      todo-schemas.ts
-    app.ts
-    server.ts
-  tests/
-    controllers/
-    helpers/
-    use-cases/
-      auth/
-      todo/
-  .env.example
-  package.json
-  tsconfig.json
-```
-
-## 4. Instalação e Configuração
+## 3. Instalação e Configuração
 
 ### Pré-requisitos
 
@@ -134,7 +61,7 @@ bun run db:init
 bun run dev
 ```
 
-## 5. Variáveis de Ambiente
+## 4. Variáveis de Ambiente
 
 Arquivo `.env`:
 
@@ -144,9 +71,10 @@ PORT=3000
 DATABASE_PATH=./database.sqlite
 COOKIE_NAME=session_token
 SESSION_TTL_HOURS=24
+JWT_SECRET=dev-secret-change-this-in-production-min32chars
 ```
 
-## 6. Scripts Disponíveis
+## 5. Scripts Disponíveis
 
 - `bun run dev`: sobe API com watch.
 - `bun run build`: gera build em `dist`.
@@ -157,11 +85,11 @@ SESSION_TTL_HOURS=24
 - `bun run test:watch`: executa testes em modo watch.
 - `bun run typecheck`: valida tipagem TypeScript.
 
-## 7. Endpoints da API
+## 6. Endpoints da API
 
 Base URL: `http://localhost:3000/api/v1`
 
-### 7.1 Health
+### 6.1 Health
 
 #### GET `/health`
 
@@ -175,7 +103,7 @@ Response `200`:
 }
 ```
 
-### 7.2 Autenticação
+### 6.2 Autenticação
 
 #### POST `/auth/register`
 
@@ -254,7 +182,7 @@ Response `200`:
 }
 ```
 
-### 7.3 Tarefas (Todo)
+### 6.3 Tarefas (Todo)
 
 Todos os endpoints abaixo exigem cookie de autenticação.
 
@@ -333,7 +261,7 @@ Response `200`:
 }
 ```
 
-## 8. Formato de Erro Padrão
+## 7. Formato de Erro Padrão
 
 ```json
 {
@@ -343,7 +271,7 @@ Response `200`:
 }
 ```
 
-## 9. Decisões de Arquitetura
+## 8. Decisões de Arquitetura
 
 - **Use-Case Pattern**: cada operação é uma classe isolada com método `execute()`, facilitando teste e reuso.
 - **Factories**: `src/factories/` compõe use-cases com repositórios concretos; trocar persistência exige alterar apenas a factory.
@@ -353,8 +281,9 @@ Response `200`:
 - Middlewares lidam com autenticação e tratamento de erro de forma transversal.
 - Contratos (`contracts`) aplicam inversão de dependência (SOLID - DIP).
 - UUID v7 em IDs melhora ordenação temporal aproximada e garante unicidade distribuída.
+- **JWT para tokens de sessão**: tokens assinados com HS256 via `jose` são armazenados em cookie HTTP-only. A sessão também é persistida no banco para suportar revogação explícita (logout). A validação dupla — assinatura JWT + consulta ao banco — garante segurança sem comprometer desempenho.
 
-## 10. Guia de Contribuição
+## 9. Guia de Contribuição
 
 1. Crie branch de feature a partir da principal.
 2. Mantenha padrão de camadas e nomenclaturas em `snake_case` para colunas SQL.
